@@ -1,0 +1,17 @@
+package com.smartapply.smart_apply.repository;
+
+import com.smartapply.smart_apply.model.Job;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface JobRepository extends JpaRepository<Job, Long> {
+
+    List<Job> findByLocation(String location);
+
+    List<Job> findByCompany(String company);
+
+    List<Job> findByTitleContainingIgnoreCase(String title);
+}
