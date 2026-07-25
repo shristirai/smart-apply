@@ -1,4 +1,5 @@
-package com.smartapply.smart_apply.dto;
+
+package com.smartapply.smart_apply.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -20,4 +21,8 @@ public class RegisterRequest {
     @NotBlank(message = "Password is required")
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
+
+    // must be either "SEEKER" or "RECRUITER"
+    @NotBlank(message = "Role is required")
+    private String role;
 }
