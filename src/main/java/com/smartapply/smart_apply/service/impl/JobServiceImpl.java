@@ -3,7 +3,9 @@ package com.smartapply.smart_apply.service.impl;
 import com.smartapply.smart_apply.dto.request.JobRequestDTO;
 import com.smartapply.smart_apply.dto.response.JobResponseDTO;
 import com.smartapply.smart_apply.model.Job;
+import com.smartapply.smart_apply.model.User;
 import com.smartapply.smart_apply.repository.JobRepository;
+import com.smartapply.smart_apply.repository.UserRepository;
 import com.smartapply.smart_apply.service.JobService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,10 +18,17 @@ import java.util.List;
 public class JobServiceImpl implements JobService {
 
     private final JobRepository jobRepository;
+    private final UserRepository userRepository;
 
     @Override
-    public JobResponseDTO createJob(JobRequestDTO jobRequestDTO) {
+    public JobResponseDTO createJob(
+            JobRequestDTO jobRequestDTO,
+            String email) {
+        User recruiter = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("Recruiter not found"));
         Job job = mapToEntity(jobRequestDTO);
+        job.setRecruiter(recruiter);
 
         Job savedJob = jobRepository.save(job);
 
@@ -49,10 +58,16 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public JobResponseDTO updateJob(Long id, JobRequestDTO jobRequestDTO) {
+    public JobResponseDTO updateJob(Long id, JobRequestDTO jobRequestDTO, String email) {
+
         Job job = jobRepository.findById(id)
                 .orElseThrow(() ->
                         new RuntimeException("Job not found with id: " + id));
+
+        if (!job.getRecruiter().getEmail().equals(email)) {
+            throw new RuntimeException(
+                    "You cannot update this job");
+        }
 
         job.setTitle(jobRequestDTO.getTitle());
         job.setCompany(jobRequestDTO.getCompany());
@@ -68,10 +83,17 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
-    public void deleteJob(Long id) {
+    public void deleteJob(Long id, String email) {
+
         Job job = jobRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Job not found with id: " + id));
+                        new RuntimeException(
+                                "Job not found with id: " + id));
+
+        if (!job.getRecruiter().getEmail().equals(email)) {
+            throw new RuntimeException(
+                    "You cannot delete this job");
+        }
 
         jobRepository.delete(job);
     }

@@ -1,5 +1,6 @@
 package com.smartapply.smart_apply.model;
 
+import com.smartapply.smart_apply.dto.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,7 +25,7 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    // "SEEKER" or "RECRUITER"
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String role;
+    private Role role;
 }

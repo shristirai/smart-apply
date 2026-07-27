@@ -7,6 +7,10 @@ import com.smartapply.smart_apply.dto.gemini.request.ContentDTO;
 import com.smartapply.smart_apply.dto.gemini.request.GeminiRequestDTO;
 import com.smartapply.smart_apply.dto.gemini.request.PartDTO;
 import com.smartapply.smart_apply.dto.gemini.response.GeminiResponseDTO;
+import com.smartapply.smart_apply.model.Resume;
+import com.smartapply.smart_apply.model.User;
+import com.smartapply.smart_apply.repository.ResumeRepository;
+import com.smartapply.smart_apply.repository.UserRepository;
 import com.smartapply.smart_apply.service.ai.GeminiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,13 +25,28 @@ public class GeminiServiceImpl implements GeminiService {
     private final WebClient webClient;
     private final GeminiConfig geminiConfig;
     private final ObjectMapper objectMapper;
+    private final ResumeRepository resumeRepository;
+    private final UserRepository userRepository;
 
     @Override
     public GeminiResponseDTO generateCareerAdvice(
+            String email,
             List<String> matchedSkills,
             List<String> missingSkills) {
 
-        String prompt = buildPrompt(matchedSkills, missingSkills);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        Resume resume = resumeRepository.findByUserId(user.getId())
+                .orElseThrow(() ->
+                        new RuntimeException("Resume not found"));
+
+        String prompt = buildPrompt(
+                resume.getExtractedText(),
+                matchedSkills,
+                missingSkills
+        );
 
         String url =
                 "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -76,11 +95,16 @@ public class GeminiServiceImpl implements GeminiService {
     }
 
     private String buildPrompt(
+            String resumeText,
             List<String> matchedSkills,
             List<String> missingSkills) {
 
         return """
             You are an expert Career Advisor and Resume Reviewer.
+
+            Candidate Resume:
+
+            %s
 
             Candidate Matched Skills:
             %s
@@ -88,18 +112,20 @@ public class GeminiServiceImpl implements GeminiService {
             Candidate Missing Skills:
             %s
 
-            Generate personalized career advice.
+            Analyze both the resume and the skill gap.
 
             IMPORTANT RULES:
             1. Return ONLY valid JSON.
             2. Do NOT use markdown.
-            3. Do NOT wrap the JSON in ```json.
+            3. Do NOT wrap the JSON inside ```json.
             4. Do NOT add explanations.
-            5. Do NOT return null for any field.
+            5. Do NOT return null.
             6. Every array must contain at least 3 items.
-            7. resumeImprovements MUST contain exactly 3 practical resume suggestions.
+            7. Resume improvements MUST be based on the actual resume content.
+            8. Learning roadmap should focus on the missing skills.
+            9. Interview preparation should be personalized.
 
-            Return this exact JSON structure:
+            Return this exact JSON:
 
             {
               "careerSummary": "",
@@ -108,6 +134,7 @@ public class GeminiServiceImpl implements GeminiService {
               "resumeImprovements": []
             }
             """.formatted(
+                resumeText,
                 String.join(", ", matchedSkills),
                 String.join(", ", missingSkills)
         );

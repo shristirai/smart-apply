@@ -1,14 +1,18 @@
 package com.smartapply.smart_apply.service.impl;
 
-import com.smartapply.smart_apply.dto.request.RecommendationRequestDTO;
 import com.smartapply.smart_apply.dto.response.MatchResultDTO;
 import com.smartapply.smart_apply.dto.response.RecommendationResponseDTO;
 import com.smartapply.smart_apply.model.Job;
 import com.smartapply.smart_apply.model.Recommendation;
+import com.smartapply.smart_apply.model.User;
+import com.smartapply.smart_apply.model.UserSkill;
 import com.smartapply.smart_apply.repository.JobRepository;
 import com.smartapply.smart_apply.repository.RecommendationRepository;
+import com.smartapply.smart_apply.repository.UserRepository;
+import com.smartapply.smart_apply.repository.UserSkillRepository;
 import com.smartapply.smart_apply.service.MatchingService;
 import com.smartapply.smart_apply.service.RecommendationService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -24,21 +28,45 @@ public class RecommendationServiceImpl implements RecommendationService {
     private final JobRepository jobRepository;
     private final RecommendationRepository recommendationRepository;
     private final MatchingService matchingService;
+    private final UserRepository userRepository;
+    private final UserSkillRepository userSkillRepository;
+
 
     @Override
+    @Transactional
     public List<RecommendationResponseDTO> generateRecommendations(
-            RecommendationRequestDTO request) {
+            String email,
+            int page,
+            int size) {
 
-        List<JobRecommendation> recommendationList = new ArrayList<>();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
 
-        List<Job> jobs = jobRepository.findAll();
+
+        List<String> resumeSkills =
+                userSkillRepository.findByUserId(user.getId())
+                        .stream()
+                        .map(UserSkill::getSkill)
+                        .toList();
+
+
+        List<JobRecommendation> recommendationList =
+                new ArrayList<>();
+
+
+        List<Job> jobs =
+                jobRepository.findJobsBySkills(resumeSkills);
+
 
         for (Job job : jobs) {
 
             MatchResultDTO matchResult =
                     matchingService.calculateMatch(
-                            request.getResumeSkills(),
-                            job.getRequiredSkills());
+                            resumeSkills,
+                            job.getRequiredSkills()
+                    );
+
 
             recommendationList.add(
                     new JobRecommendation(job, matchResult)
@@ -50,30 +78,65 @@ public class RecommendationServiceImpl implements RecommendationService {
                                 (JobRecommendation recommendation) ->
                                         recommendation.matchResult()
                                                 .getMatchPercentage())
-                        .reversed());
+                        .reversed()
+        );
 
-        if (recommendationList.size() > 5) {
-            recommendationList =
-                    recommendationList.subList(0, 5);
+
+        int start = page * size;
+
+        if (start >= recommendationList.size()) {
+            return List.of();
         }
+
+        int end = Math.min(start + size, recommendationList.size());
+
+        recommendationList =
+                recommendationList.subList(start, end);
+
+
+        List<Recommendation> recommendationsToSave = new ArrayList<>();
+
+        for (JobRecommendation recommendationData : recommendationList) {
+
+            Recommendation recommendation =
+                    recommendationRepository
+                            .findByUserAndJob(
+                                    user,
+                                    recommendationData.job()
+                            )
+                            .orElse(new Recommendation());
+
+            recommendation.setUser(user);
+
+            recommendation.setJob(
+                    recommendationData.job()
+            );
+
+            recommendation.setMatchPercentage(
+                    recommendationData.matchResult()
+                            .getMatchPercentage()
+            );
+
+            recommendation.setRecommendedAt(
+                    LocalDateTime.now()
+            );
+
+            recommendationsToSave.add(recommendation);
+        }
+
+        List<Recommendation> savedRecommendations =
+                recommendationRepository.saveAll(recommendationsToSave);
 
         List<RecommendationResponseDTO> response =
                 new ArrayList<>();
 
-        for (JobRecommendation recommendationData : recommendationList) {
+        for (int i = 0; i < savedRecommendations.size(); i++) {
 
-            Recommendation recommendation = new Recommendation();
-
-            recommendation.setJob(recommendationData.job());
-            recommendation.setMatchPercentage(
-                    recommendationData.matchResult()
-                            .getMatchPercentage());
-            recommendation.setRecommendedAt(LocalDateTime.now());
-
-            Recommendation savedRecommendation =
-                    recommendationRepository.save(recommendation);
-
-            RecommendationResponseDTO dto = getRecommendationResponseDTO(recommendationData, savedRecommendation);
+            RecommendationResponseDTO dto =
+                    getRecommendationResponseDTO(
+                            recommendationList.get(i),
+                            savedRecommendations.get(i)
+                    );
 
             response.add(dto);
         }
@@ -81,33 +144,50 @@ public class RecommendationServiceImpl implements RecommendationService {
         return response;
     }
 
-    private static RecommendationResponseDTO getRecommendationResponseDTO(JobRecommendation recommendationData, Recommendation savedRecommendation) {
+
+    private static RecommendationResponseDTO getRecommendationResponseDTO(
+            JobRecommendation recommendationData,
+            Recommendation savedRecommendation) {
+
         RecommendationResponseDTO dto =
                 new RecommendationResponseDTO();
-
-        dto.setRecommendationId(savedRecommendation.getId());
-        dto.setJobId(recommendationData.job().getId());
-        dto.setJobTitle(recommendationData.job().getTitle());
-        dto.setCompany(recommendationData.job().getCompany());
-
+        dto.setRecommendationId(
+                savedRecommendation.getId()
+        );
+        dto.setJobId(
+                recommendationData.job().getId()
+        );
+        dto.setJobTitle(
+                recommendationData.job().getTitle()
+        );
+        dto.setCompany(
+                recommendationData.job().getCompany()
+        );
         dto.setMatchPercentage(
                 recommendationData.matchResult()
-                        .getMatchPercentage());
-
+                        .getMatchPercentage()
+        );
         dto.setMatchedSkills(
                 recommendationData.matchResult()
-                        .getMatchedSkills());
-
+                        .getMatchedSkills()
+        );
         dto.setMissingSkills(
                 recommendationData.matchResult()
-                        .getMissingSkills());
-
+                        .getMissingSkills()
+        );
         dto.setRecommendedAt(
-                savedRecommendation.getRecommendedAt());
+                savedRecommendation.getRecommendedAt()
+        );
+
+
         return dto;
     }
 
-    private record JobRecommendation(Job job, MatchResultDTO matchResult) {
+
+    private record JobRecommendation(
+            Job job,
+            MatchResultDTO matchResult
+    ) {
 
     }
 }

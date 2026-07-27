@@ -29,8 +29,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        // no token — just continue
-        // login and register will pass through here
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
@@ -38,7 +36,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
-        // wrap in try-catch so expired token doesn't crash everything
         try {
             String email = jwtService.extractEmail(token);
 
@@ -65,8 +62,6 @@ public class JwtFilter extends OncePerRequestFilter {
                 }
             }
         } catch (Exception e) {
-            // token expired or invalid — just continue without setting auth
-            // Spring Security will handle the 401 for protected routes
             SecurityContextHolder.clearContext();
         }
 

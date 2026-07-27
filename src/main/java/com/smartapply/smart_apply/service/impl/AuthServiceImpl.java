@@ -27,16 +27,11 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException("Email already registered");
         }
 
-        String role = request.getRole().toUpperCase();
-        if (!role.equals("SEEKER") && !role.equals("RECRUITER")) {
-            throw new RuntimeException("Role must be SEEKER or RECRUITER");
-        }
-
         User user = new User();
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole(role);
+        user.setRole(request.getRole());
         userRepository.save(user);
 
         String token = jwtService.generateToken(user.getEmail());

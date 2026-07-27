@@ -3,6 +3,7 @@ package com.smartapply.smart_apply.service.impl;
 import com.smartapply.smart_apply.model.UserSkill;
 import com.smartapply.smart_apply.repository.UserSkillRepository;
 import com.smartapply.smart_apply.service.SkillExtractionService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,16 +17,14 @@ public class SkillExtractionServiceImpl implements SkillExtractionService {
 
     private final UserSkillRepository userSkillRepository;
 
-    // these are common section headings that appear AFTER the skills section
     private static final List<String> STOP_SECTIONS = List.of(
             "WORK EXPERIENCE", "EXPERIENCE", "EMPLOYMENT",
             "EDUCATION", "PROJECTS", "CERTIFICATIONS",
             "CERTIFICATION", "AWARDS", "INTERNSHIP",
-            "SUMMARY", "OBJECTIVE", "LANGUAGES",
+            "SUMMARY", "OBJECTIVE",
             "ACHIEVEMENTS", "PUBLICATIONS", "REFERENCES"
     );
 
-    // these are headings that START the skills section
     private static final List<String> SKILL_HEADINGS = List.of(
             "SKILLS", "TECHNICAL SKILLS", "PROFESSIONAL SKILLS",
             "CORE COMPETENCIES", "COMPETENCIES", "KEY SKILLS",
@@ -33,6 +32,7 @@ public class SkillExtractionServiceImpl implements SkillExtractionService {
     );
 
     @Override
+    @Transactional
     public List<String> extractAndSaveSkills(String resumeText, Long userId) {
 
         List<String> skills = extractSkillsFromText(resumeText);

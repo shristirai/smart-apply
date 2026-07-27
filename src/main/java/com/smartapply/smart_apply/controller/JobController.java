@@ -5,22 +5,30 @@ import com.smartapply.smart_apply.dto.response.JobResponseDTO;
 import com.smartapply.smart_apply.service.JobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/jobs")
+@RequestMapping("/api/jobs")
 @RequiredArgsConstructor
 public class JobController {
 
     private final JobService jobService;
 
     @PostMapping
+    @PreAuthorize("hasRole('RECRUITER')")
     public JobResponseDTO createJob(
-            @Valid @RequestBody JobRequestDTO jobRequestDTO) {
+            @Valid @RequestBody JobRequestDTO jobRequestDTO,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        return jobService.createJob(jobRequestDTO);
+        return jobService.createJob(
+                jobRequestDTO,
+                userDetails.getUsername()
+        );
     }
 
     @GetMapping("/{id}")
@@ -36,17 +44,29 @@ public class JobController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('RECRUITER')")
     public JobResponseDTO updateJob(
             @PathVariable Long id,
-            @Valid @RequestBody JobRequestDTO jobRequestDTO) {
+            @Valid @RequestBody JobRequestDTO jobRequestDTO,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        return jobService.updateJob(id, jobRequestDTO);
+        return jobService.updateJob(
+                id,
+                jobRequestDTO,
+                userDetails.getUsername()
+        );
     }
 
     @DeleteMapping("/{id}")
-    public void deleteJob(@PathVariable Long id) {
+    @PreAuthorize("hasRole('RECRUITER')")
+    public void deleteJob(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
 
-        jobService.deleteJob(id);
+        jobService.deleteJob(
+                id,
+                userDetails.getUsername()
+        );
     }
 
     @GetMapping("/search/title")

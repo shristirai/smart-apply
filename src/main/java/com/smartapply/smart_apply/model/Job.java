@@ -41,4 +41,8 @@ public class Job {
     private Integer experience;
 
     private Double salary;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recruiter_id", nullable = false)
+    private User recruiter;
 }
