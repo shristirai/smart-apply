@@ -57,3 +57,4 @@ Notes
 # JVM crash logs
 hs_err_pid*
 replay_pid*
+uploads/
