@@ -5,6 +5,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,9 +16,15 @@ public class RecommendationResponseDTO {
 
     private String jobTitle;
 
+    private Long jobId;
+
     private String company;
 
     private Double matchPercentage;
+
+    private List<String> matchedSkills;
+
+    private List<String> missingSkills;
 
     private LocalDateTime recommendedAt;
 }
