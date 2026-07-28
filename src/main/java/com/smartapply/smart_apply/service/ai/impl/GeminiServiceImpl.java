@@ -7,6 +7,8 @@ import com.smartapply.smart_apply.dto.gemini.request.ContentDTO;
 import com.smartapply.smart_apply.dto.gemini.request.GeminiRequestDTO;
 import com.smartapply.smart_apply.dto.gemini.request.PartDTO;
 import com.smartapply.smart_apply.dto.gemini.response.GeminiResponseDTO;
+import com.smartapply.smart_apply.exception.SmartApplyErrorMessage;
+import com.smartapply.smart_apply.exception.SmartApplyException;
 import com.smartapply.smart_apply.model.Resume;
 import com.smartapply.smart_apply.model.User;
 import com.smartapply.smart_apply.repository.ResumeRepository;
@@ -36,11 +38,17 @@ public class GeminiServiceImpl implements GeminiService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.USER_NOT_FOUND
+                        )
+                );
 
         Resume resume = resumeRepository.findByUserId(user.getId())
                 .orElseThrow(() ->
-                        new RuntimeException("Resume not found"));
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.RESUME_NOT_FOUND
+                        )
+                );
 
         String prompt = buildPrompt(
                 resume.getExtractedText(),
@@ -64,12 +72,20 @@ public class GeminiServiceImpl implements GeminiService {
                 )
         );
 
-        String response = webClient.post()
-                .uri(url)
-                .bodyValue(requestBody)
-                .retrieve()
-                .bodyToMono(String.class)
-                .block();
+        String response;
+
+        try {
+            response = webClient.post()
+                    .uri(url)
+                    .bodyValue(requestBody)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+        } catch (Exception e) {
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.GEMINI_API_ERROR
+            );
+        }
 
         try {
 
@@ -90,7 +106,9 @@ public class GeminiServiceImpl implements GeminiService {
             );
 
         } catch (Exception e) {
-            throw new RuntimeException("Failed to parse Gemini response", e);
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.GEMINI_RESPONSE_PARSE_ERROR
+            );
         }
     }
 

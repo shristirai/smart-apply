@@ -1,5 +1,7 @@
 package com.smartapply.smart_apply.service.impl;
 
+import com.smartapply.smart_apply.exception.SmartApplyErrorMessage;
+import com.smartapply.smart_apply.exception.SmartApplyException;
 import com.smartapply.smart_apply.model.UserSkill;
 import com.smartapply.smart_apply.repository.UserSkillRepository;
 import com.smartapply.smart_apply.service.SkillExtractionService;
@@ -34,6 +36,12 @@ public class SkillExtractionServiceImpl implements SkillExtractionService {
     @Override
     @Transactional
     public List<String> extractAndSaveSkills(String resumeText, Long userId) {
+
+        if (resumeText == null || resumeText.isBlank()) {
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.INVALID_RESUME_FILE
+            );
+        }
 
         List<String> skills = extractSkillsFromText(resumeText);
 

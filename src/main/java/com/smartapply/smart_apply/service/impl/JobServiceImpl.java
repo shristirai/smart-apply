@@ -2,6 +2,8 @@ package com.smartapply.smart_apply.service.impl;
 
 import com.smartapply.smart_apply.dto.request.JobRequestDTO;
 import com.smartapply.smart_apply.dto.response.JobResponseDTO;
+import com.smartapply.smart_apply.exception.SmartApplyErrorMessage;
+import com.smartapply.smart_apply.exception.SmartApplyException;
 import com.smartapply.smart_apply.model.Job;
 import com.smartapply.smart_apply.model.User;
 import com.smartapply.smart_apply.repository.JobRepository;
@@ -26,7 +28,9 @@ public class JobServiceImpl implements JobService {
             String email) {
         User recruiter = userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("Recruiter not found"));
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.RECRUITER_NOT_FOUND
+                        ));
         Job job = mapToEntity(jobRequestDTO);
         job.setRecruiter(recruiter);
 
@@ -39,7 +43,9 @@ public class JobServiceImpl implements JobService {
     public JobResponseDTO getJobById(Long id) {
         Job job = jobRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Job not found with id: " + id));
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.JOB_NOT_FOUND
+                        ));
 
         return mapToResponse(job);
     }
@@ -62,11 +68,14 @@ public class JobServiceImpl implements JobService {
 
         Job job = jobRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Job not found with id: " + id));
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.JOB_NOT_FOUND
+                        ));
 
         if (!job.getRecruiter().getEmail().equals(email)) {
-            throw new RuntimeException(
-                    "You cannot update this job");
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.JOB_UPDATE_NOT_ALLOWED
+            );
         }
 
         job.setTitle(jobRequestDTO.getTitle());
@@ -87,12 +96,14 @@ public class JobServiceImpl implements JobService {
 
         Job job = jobRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException(
-                                "Job not found with id: " + id));
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.JOB_NOT_FOUND
+                        ));
 
         if (!job.getRecruiter().getEmail().equals(email)) {
-            throw new RuntimeException(
-                    "You cannot delete this job");
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.JOB_DELETE_NOT_ALLOWED
+            );
         }
 
         jobRepository.delete(job);

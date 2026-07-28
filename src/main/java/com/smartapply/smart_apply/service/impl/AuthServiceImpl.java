@@ -3,6 +3,8 @@ package com.smartapply.smart_apply.service.impl;
 import com.smartapply.smart_apply.dto.request.LoginRequest;
 import com.smartapply.smart_apply.dto.request.RegisterRequest;
 import com.smartapply.smart_apply.dto.response.AuthResponse;
+import com.smartapply.smart_apply.exception.SmartApplyErrorMessage;
+import com.smartapply.smart_apply.exception.SmartApplyException;
 import com.smartapply.smart_apply.model.User;
 import com.smartapply.smart_apply.repository.UserRepository;
 import com.smartapply.smart_apply.security.JwtService;
@@ -24,7 +26,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.EMAIL_ALREADY_EXISTS
+            );
         }
 
         User user = new User();
@@ -41,12 +45,25 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(), request.getPassword()));
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+        } catch (BadCredentialsException e) {
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.INVALID_CREDENTIALS
+            );
+        }
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() ->
+                                new SmartApplyException(
+                                        SmartApplyErrorMessage.USER_NOT_FOUND
+                                )
+                );
 
         String token = jwtService.generateToken(user.getEmail());
         return new AuthResponse(token, user.getEmail(),

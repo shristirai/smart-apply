@@ -2,6 +2,8 @@ package com.smartapply.smart_apply.service.impl;
 
 import com.smartapply.smart_apply.dto.response.MatchResultDTO;
 import com.smartapply.smart_apply.dto.response.RecommendationResponseDTO;
+import com.smartapply.smart_apply.exception.SmartApplyErrorMessage;
+import com.smartapply.smart_apply.exception.SmartApplyException;
 import com.smartapply.smart_apply.model.Job;
 import com.smartapply.smart_apply.model.Recommendation;
 import com.smartapply.smart_apply.model.User;
@@ -41,7 +43,10 @@ public class RecommendationServiceImpl implements RecommendationService {
 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("User not found"));
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.USER_NOT_FOUND
+                        )
+                );
 
 
         List<String> resumeSkills =

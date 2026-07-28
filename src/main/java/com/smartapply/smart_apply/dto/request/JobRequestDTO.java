@@ -25,6 +25,7 @@ public class JobRequestDTO {
     private String location;
 
     @NotBlank(message = "Job description is required.")
+    @Size(max = 5000, message = "Job description cannot exceed 5000 characters.")
     private String description;
 
     @NotEmpty(message = "At least one required skill must be provided.")

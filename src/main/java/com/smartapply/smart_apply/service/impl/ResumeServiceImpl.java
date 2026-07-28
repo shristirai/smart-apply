@@ -1,6 +1,8 @@
 package com.smartapply.smart_apply.service.impl;
 
 import com.smartapply.smart_apply.dto.response.ResumeResponse;
+import com.smartapply.smart_apply.exception.SmartApplyErrorMessage;
+import com.smartapply.smart_apply.exception.SmartApplyException;
 import com.smartapply.smart_apply.model.Resume;
 import com.smartapply.smart_apply.model.User;
 import com.smartapply.smart_apply.model.UserSkill;
@@ -37,13 +39,33 @@ public class ResumeServiceImpl implements ResumeService {
     public ResumeResponse uploadResume(MultipartFile file, String email) {
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() ->
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.USER_NOT_FOUND
+                        )
+                );
+
+        if (file.isEmpty()) {
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.INVALID_RESUME_FILE
+            );
+        }
+
+        String originalFileName = file.getOriginalFilename();
+
+        if (originalFileName == null
+                || !originalFileName.toLowerCase().endsWith(".pdf")) {
+
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.INVALID_RESUME_FILE
+            );
+        }
 
         try {
             // 1. save PDF to disk
             Path uploadPath = Paths.get(uploadDir);
             Files.createDirectories(uploadPath);
-            String fileName = user.getId() + "_" + file.getOriginalFilename();
+            String fileName = user.getId() + "_" + originalFileName;
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath,
                     StandardCopyOption.REPLACE_EXISTING);
@@ -74,7 +96,9 @@ public class ResumeServiceImpl implements ResumeService {
                     skills);
 
         } catch (IOException e) {
-            throw new RuntimeException("Upload failed: " + e.getMessage());
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.RESUME_UPLOAD_FAILED
+            );
         }
     }
 
@@ -82,10 +106,18 @@ public class ResumeServiceImpl implements ResumeService {
     public ResumeResponse getResumeAnalysis(String email) {
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() ->
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.USER_NOT_FOUND
+                        )
+                );
 
         Resume resume = resumeRepository.findByUserId(user.getId())
-                .orElseThrow(() -> new RuntimeException("No resume found"));
+                .orElseThrow(() ->
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.RESUME_NOT_FOUND
+                        )
+                );
 
         List<String> skills = userSkillRepository
                 .findByUserId(user.getId())

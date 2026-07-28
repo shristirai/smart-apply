@@ -1,5 +1,7 @@
 package com.smartapply.smart_apply.service.impl;
 
+import com.smartapply.smart_apply.exception.SmartApplyErrorMessage;
+import com.smartapply.smart_apply.exception.SmartApplyException;
 import com.smartapply.smart_apply.service.PdfService;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -22,7 +24,9 @@ public class PdfServiceImpl implements PdfService {
             document.close();
             return text;
         } catch (IOException e) {
-            throw new RuntimeException("Failed to read PDF: " + e.getMessage());
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.PDF_EXTRACTION_FAILED
+            );
         }
     }
 }
