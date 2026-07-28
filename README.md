@@ -169,150 +169,409 @@ src/main/java/com/smartapply/smart_apply
 
 # Database Design
 
-## User Table
+The application uses a relational database design with normalized tables to manage users, resumes, jobs, skills, and recommendations.
 
-Stores user account details.
+---
 
-Fields:
-- id
-- name
-- email
-- password
-- role
+## User Table (`users`)
 
-
-## Resume Table
-
-Stores uploaded resume information.
+Stores user account information for both job seekers and recruiters.
 
 Fields:
-- id
-- fileName
-- extractedText
-- skills
-- user_id
+
+- `id` (Primary Key)
+- `fullName`
+- `email` (Unique)
+- `password`
+- `role` (USER / RECRUITER)
 
 
-## Job Table
+---
 
-Stores job details.
+## Resume Table (`resumes`)
 
-Fields:
-- id
-- title
-- company
-- description
-- requiredSkills
-
-
-## Recommendation Table
-
-Stores generated recommendations.
+Stores uploaded resume information of users.
 
 Fields:
-- id
-- matchPercentage
-- user_id
-- job_id
+
+- `id` (Primary Key)
+- `user_id`
+- `file_path`
+- `extracted_text`
+
+Relationship:
+
+- A user can have resume information associated with their account.
 
 
-## SkillGap Table
+---
 
-Stores missing skills information.
+## User Skill Table (`user_skills`)
+
+Stores skills extracted from user resumes.
 
 Fields:
-- id
-- missingSkills
-- recommendation_id
 
+- `id` (Primary Key)
+- `user_id`
+- `skill`
+
+Purpose:
+
+- Stores individual skills of users.
+- Used for matching user skills with job requirements.
+
+
+---
+
+## Job Table (`jobs`)
+
+Stores job posting information created by recruiters.
+
+Fields:
+
+- `id` (Primary Key)
+- `title`
+- `company`
+- `location`
+- `description`
+- `experience`
+- `salary`
+- `recruiter_id`
+
+
+### Job Skills Table (`job_skills`)
+
+Stores required skills for each job.
+
+Fields:
+
+- `job_id` (Foreign Key)
+- `skill`
+
+
+Relationship:
+
+- One job can have multiple required skills.
+- A recruiter can create multiple job postings.
+
+
+---
+
+## Recommendation Table (`recommendations`)
+
+Stores personalized job recommendations generated for users.
+
+Fields:
+
+- `id` (Primary Key)
+- `user_id`
+- `job_id`
+- `match_percentage`
+- `recommended_at`
+
+
+Relationships:
+
+- One user can receive multiple recommendations.
+- One job can be recommended to multiple users.
+
+
+---
+
+# Entity Relationships
+
+```
+User
+ |
+ |---- Resume
+ |
+ |---- UserSkill
+ |
+ |---- Recommendation
+              |
+              |
+             Job
+              |
+              |
+        JobSkill
+
+
+User (Recruiter)
+        |
+        |
+       Job
+```
+
+---
+
+# Database Normalization
+
+The database follows **Third Normal Form (3NF)** normalization.
+
+Reasons:
+
+- User information is stored separately from resume and job data.
+- Skills are stored in separate tables (`user_skills`, `job_skills`) to avoid data duplication.
+- Job recommendation data is maintained separately using relationships between users and jobs.
+- Each table represents a single entity with minimal redundancy.
 
 ---
 
 # API Endpoints
 
-## Authentication APIs
+The backend exposes RESTful APIs for authentication, user management, resume analysis, job management, AI career advice, and job recommendations.
 
-### Register User
+---
+
+# Authentication APIs
+
+## Register User
+
+Creates a new user account.
 
 ```
 POST /api/auth/register
 ```
 
-### Login User
+Access:
+- Public
+
+
+## Login User
+
+Authenticates user and returns JWT token.
 
 ```
 POST /api/auth/login
 ```
 
+Access:
+- Public
+
 
 ---
 
-## Resume APIs
+# User APIs
 
-### Upload Resume
+## Get User Profile
+
+Fetches authenticated user's profile details.
+
+```
+GET /api/user/profile
+```
+
+Access:
+- Authenticated User
+
+
+---
+
+# Resume APIs
+
+## Upload Resume
+
+Uploads a PDF resume, extracts text, and analyzes skills.
 
 ```
 POST /api/resume/upload
 ```
 
-### Get Resume
+Request:
+- Multipart file
+
+Access:
+- SEEKER
+
+
+## Get Resume Analysis
+
+Returns extracted resume information and skill analysis.
 
 ```
-GET /api/resume/{id}
+GET /api/resume/analysis
 ```
+
+Access:
+- SEEKER
 
 
 ---
 
-## Job APIs
+# Job APIs
 
-### Create Job
+## Create Job
+
+Creates a new job posting.
 
 ```
 POST /api/jobs
 ```
 
-### Get All Jobs
+Access:
+- RECRUITER
+
+
+## Get All Jobs
+
+Fetches all available job postings.
 
 ```
 GET /api/jobs
 ```
 
-### Get Job By Id
+Access:
+- Authenticated User
+
+
+## Get Job By ID
+
+Fetches job details using job id.
 
 ```
 GET /api/jobs/{id}
 ```
 
+Access:
+- Authenticated User
+
+
+## Update Job
+
+Updates an existing job posting.
+
+```
+PUT /api/jobs/{id}
+```
+
+Access:
+- RECRUITER
+
+
+## Delete Job
+
+Deletes a job posting.
+
+```
+DELETE /api/jobs/{id}
+```
+
+Access:
+- RECRUITER
+
+
+## Search Jobs By Title
+
+Search jobs using job title.
+
+```
+GET /api/jobs/search/title?title={title}
+```
+
+Access:
+- Authenticated User
+
+
+## Search Jobs By Company
+
+Search jobs using company name.
+
+```
+GET /api/jobs/search/company?company={company}
+```
+
+Access:
+- Authenticated User
+
+
+## Search Jobs By Location
+
+Search jobs using location.
+
+```
+GET /api/jobs/search/location?location={location}
+```
+
+Access:
+- Authenticated User
+
 
 ---
 
-## Recommendation APIs
+# Recommendation APIs
 
-### Generate Recommendation
+## Generate Job Recommendations
 
-```
-POST /api/recommendations/generate
-```
-
-### Get User Recommendations
+Generates personalized job recommendations based on user's skills.
 
 ```
-GET /api/recommendations/user/{userId}
+GET /api/recommendations
 ```
+
+Query Parameters:
+
+```
+?page=0&size=5
+```
+
+Example:
+
+```
+GET /api/recommendations?page=0&size=5
+```
+
+Access:
+- SEEKER
 
 
 ---
 
-## Gemini AI APIs
+# Gemini AI APIs
 
-### Generate Career Advice
+## Generate Career Advice
+
+Uses Gemini AI to provide career suggestions based on matched and missing skills.
 
 ```
 POST /api/gemini/career-advice
 ```
 
+Request Body:
+
+```json
+{
+  "matchedSkills": [
+    "Java",
+    "Spring Boot"
+  ],
+  "missingSkills": [
+    "Docker",
+    "AWS"
+  ]
+}
+```
+
+Access:
+- SEEKER
+
+
 ---
+
+# API Security
+
+Authentication is implemented using:
+
+- JWT Token based authentication
+- Spring Security
+- Role-based authorization
+
+Available roles:
+
+```
+SEEKER
+RECRUITER
+```
 
 # Environment Configuration
 
