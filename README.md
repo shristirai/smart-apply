@@ -404,4 +404,4 @@ API testing:
 Smart Apply Development Team
 
 - **Shristi Rai**(@shristirai)
-- - **Prachi Singh** (@singhscala)
+- **Prachi Singh** (@singhscala)
