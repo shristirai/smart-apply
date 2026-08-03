@@ -22,6 +22,8 @@ public class RecommendationResponseDTO {
 
     private String company;
 
+    private String jobDescription;
+
     private Double matchPercentage;
 
     private List<String> matchedSkills;

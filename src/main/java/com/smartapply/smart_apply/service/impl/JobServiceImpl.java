@@ -64,6 +64,25 @@ public class JobServiceImpl implements JobService {
     }
 
     @Override
+    public List<JobResponseDTO> getMyJobs(String email) {
+        User recruiter = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new SmartApplyException(
+                                SmartApplyErrorMessage.RECRUITER_NOT_FOUND
+                        ));
+
+        List<Job> jobs = jobRepository.findByRecruiter(recruiter);
+        List<JobResponseDTO> response = new ArrayList<>();
+        for(Job job : jobs){
+
+            response.add(mapToResponse(job));
+
+        }
+        return response;
+
+    }
+
+    @Override
     public JobResponseDTO updateJob(Long id, JobRequestDTO jobRequestDTO, String email) {
 
         Job job = jobRepository.findById(id)

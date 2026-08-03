@@ -11,6 +11,8 @@ public interface JobService {
             String email
     );
 
+    List<JobResponseDTO> getMyJobs(String email);
+
     JobResponseDTO getJobById(Long id);
 
     List<JobResponseDTO> getAllJobs();

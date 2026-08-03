@@ -11,10 +11,8 @@ import java.util.List;
 @AllArgsConstructor
 public class CareerAdviceRequestDTO {
 
-    @NotEmpty(message = "Matched skills cannot be empty")
     private List<String> matchedSkills;
 
-    @NotEmpty(message = "Missing skills cannot be empty")
     private List<String> missingSkills;
 
 }

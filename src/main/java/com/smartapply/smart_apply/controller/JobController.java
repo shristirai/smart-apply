@@ -31,6 +31,17 @@ public class JobController {
         );
     }
 
+    @GetMapping("/my-jobs")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public List<JobResponseDTO> getMyJobs(
+            @AuthenticationPrincipal UserDetails userDetails
+    ){
+        return jobService.getMyJobs(
+                userDetails.getUsername()
+        );
+
+    }
+
     @GetMapping("/{id}")
     public JobResponseDTO getJobById(@PathVariable Long id) {
 

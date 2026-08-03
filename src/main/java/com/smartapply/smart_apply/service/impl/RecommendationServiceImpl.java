@@ -168,6 +168,9 @@ public class RecommendationServiceImpl implements RecommendationService {
         dto.setCompany(
                 recommendationData.job().getCompany()
         );
+        dto.setJobDescription(
+                recommendationData.job().getDescription()
+        );
         dto.setMatchPercentage(
                 recommendationData.matchResult()
                         .getMatchPercentage()
