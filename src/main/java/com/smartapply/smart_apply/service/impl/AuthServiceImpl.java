@@ -61,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() ->
                                 new SmartApplyException(
-                                        SmartApplyErrorMessage.USER_NOT_FOUND
+                                        SmartApplyErrorMessage.INVALID_CREDENTIALS
                                 )
                 );
 

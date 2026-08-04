@@ -32,6 +32,8 @@ public class ResumeServiceImpl implements ResumeService {
     private final UserRepository userRepository;
     private final UserSkillRepository userSkillRepository;
 
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
+
     @Value("${file.upload-dir}")
     private String uploadDir;
 
@@ -48,6 +50,12 @@ public class ResumeServiceImpl implements ResumeService {
         if (file.isEmpty()) {
             throw new SmartApplyException(
                     SmartApplyErrorMessage.INVALID_RESUME_FILE
+            );
+        }
+
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new SmartApplyException(
+                    SmartApplyErrorMessage.FILE_SIZE_EXCEEDED
             );
         }
 

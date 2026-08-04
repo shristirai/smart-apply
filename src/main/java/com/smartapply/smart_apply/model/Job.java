@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -45,4 +46,11 @@ public class Job {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "recruiter_id", nullable = false)
     private User recruiter;
+
+    @OneToMany(
+            mappedBy = "job",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private List<Recommendation> recommendations = new ArrayList<>();
 }
