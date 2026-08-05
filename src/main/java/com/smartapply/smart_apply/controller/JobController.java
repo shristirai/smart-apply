@@ -39,7 +39,6 @@ public class JobController {
         return jobService.getMyJobs(
                 userDetails.getUsername()
         );
-
     }
 
     @GetMapping("/{id}")
